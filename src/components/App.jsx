@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import { Component } from 'react';
+
 import * as API from '../services/pixabay';
 
 import { Searchbar } from './Searchbar/Searchbar';
