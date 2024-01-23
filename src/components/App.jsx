@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import { Component } from 'react';
+import './style.scss';
 
 import * as API from '../services/pixabay';
 
@@ -8,8 +9,6 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { Modal } from './Modal/Modal';
-
-import './style.scss';
 
 export default class App extends Component {
   state = {
