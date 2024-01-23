@@ -1,69 +1,103 @@
 import { nanoid } from 'nanoid';
 import { Component } from 'react';
+import * as API from '../services/pixabay';
 
-import Contactsform from './Contactsform/Contactsform';
-import { ContactsList } from './ContactsList/ContactsList';
-import { Filter } from './Filter/Filter';
+import { Searchbar } from './Searchbar/Searchbar';
+import { ImageGallery } from './ImageGallery/ImageGallery';
+import { Button } from './Button/Button';
+import { Loader } from './Loader/Loader';
+import { Modal } from './Modal/Modal';
+
 import './style.scss';
 
 export default class App extends Component {
   state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
+    images: [],
+    isLoading: false,
+    error: '',
+    searchText: '',
+    page: 1,
+    modal: false,
+    modalImage: '',
   };
 
-  componentDidMount() {
-    const contacts =
-      JSON.parse(localStorage.getItem('contacts')) ?? this.state.contacts;
-
-    this.setState({
-      contacts: contacts,
-    });
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.searchText !== this.state.searchText) {
+      this.setState({ images: [], page: 1 });
+      this.getImages(this.state.searchText, `${this.state.page}`);
+    }
   }
-
-  componentDidUpdate() {
-    localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-  }
-
-  handleSubmit = data => {
-    this.setState(prev => {
-      return {
-        contacts: [...prev.contacts, { ...data, id: nanoid() }],
-      };
-    });
+  getImages = (query, page) => {
+    this.setState({ isLoading: true });
+    API.getImages(query, page)
+      .then(responce => {
+        if (responce.ok) {
+          return responce.json();
+        } else {
+          throw new Error('Щось пішло не так :-( спробуйте ще раз!');
+        }
+      })
+      .then(data => {
+        const newImages = data.hits.map(
+          ({ id, webformatURL, largeImageURL }) => ({
+            id,
+            webformatURL,
+            largeImageURL,
+          })
+        );
+        this.setState(prev => ({
+          images: [...prev.images, ...newImages],
+          isLoading: false,
+          page: prev.page + 1,
+          error: '',
+        }));
+      })
+      .catch(error => {
+        console.log(error.message);
+        this.setState({
+          error: error.message,
+        });
+      });
   };
-  handleFilter = ({ target }) => {
+
+  handleSearch = value => {
     this.setState({
-      filter: target.value,
+      searchText: value,
     });
   };
-  handleDeleteContact = id => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(item => item.id !== id),
-    }));
+  addImages = () => {
+    this.getImages(this.state.searchText, `${this.state.page}`);
+    this.setState(prev => ({ page: prev.page + 1 }));
+  };
+
+  openModal = srcImage => {
+    this.setState({
+      modal: true,
+      modalImage: srcImage,
+    });
+  };
+  closeModal = () => {
+    this.setState({
+      modal: false,
+    });
   };
 
   render() {
     return (
-      <div className="phonebook">
-        <h1>Phonebook</h1>
-        <Contactsform
-          contacts={this.state.contacts}
-          onSubmit={this.handleSubmit}
-        />
-        <h2>Contacts</h2>
-        <Filter onFilter={this.handleFilter} />
-        <ContactsList
-          filter={this.state.filter}
-          contacts={this.state.contacts}
-          onDelete={this.handleDeleteContact}
-        />
-      </div>
+      <>
+        <div className="app">
+          <Searchbar onSubmit={this.handleSearch} />
+          {this.state.error && <p>{this.state.error}</p>}
+          <ImageGallery images={this.state.images} openModal={this.openModal} />
+          {this.state.isLoading && !this.state.error && <Loader />}
+          {Boolean(this.state.images.length) && (
+            <Button onClick={this.addImages} />
+          )}
+        </div>
+        {this.state.modal && (
+          <Modal image={this.state.modalImage} closeModal={this.closeModal} />
+        )}
+      </>
     );
   }
 }
