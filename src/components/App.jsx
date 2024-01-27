@@ -24,6 +24,9 @@ export default class App extends Component {
   componentDidUpdate(prevProps, prevState) {
     if (prevState.searchText !== this.state.searchText) {
       this.setState({ images: [], page: 1 });
+      this.getImages(this.state.searchText, '1');
+    }
+    if (prevState.page < this.state.page) {
       this.getImages(this.state.searchText, `${this.state.page}`);
     }
   }
@@ -48,7 +51,6 @@ export default class App extends Component {
         this.setState(prev => ({
           images: [...prev.images, ...newImages],
           isLoading: false,
-          page: prev.page + 1,
           error: '',
         }));
       })
@@ -66,8 +68,9 @@ export default class App extends Component {
     });
   };
   addImages = () => {
-    this.getImages(this.state.searchText, `${this.state.page}`);
-    this.setState(prev => ({ page: prev.page + 1 }));
+    this.setState(prev => ({
+      page: prev.page + 1,
+    }));
   };
 
   openModal = srcImage => {
@@ -88,9 +91,14 @@ export default class App extends Component {
         <div className="app">
           <Searchbar onSubmit={this.handleSearch} />
           {this.state.error && <p>{this.state.error}</p>}
-          <ImageGallery images={this.state.images} openModal={this.openModal} />
-          {this.state.isLoading && !this.state.error && <Loader />}
           {Boolean(this.state.images.length) && (
+            <ImageGallery
+              images={this.state.images}
+              openModal={this.openModal}
+            />
+          )}
+          {this.state.isLoading && !this.state.error && <Loader />}
+          {Boolean(this.state.images.length) && !this.state.isLoading && (
             <Button onClick={this.addImages} />
           )}
         </div>
