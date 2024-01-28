@@ -1,8 +1,6 @@
 import { Component } from 'react';
 
 export class Modal extends Component {
-  state = {};
-
   componentDidMount() {
     window.addEventListener('keydown', this.handlePressESC);
   }
